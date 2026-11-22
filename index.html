@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MT Karteikarten – Extremitäten</title>
+<style>
+  :root{
+    --bg:#f5f3ee; --card:#ffffff; --ink:#1f2a2e; --muted:#6b7478; --line:#e3e0d8;
+    --accent:#2f6f62; --accent-soft:#e3efeb; --bad:#b4533f; --bad-soft:#f6e6e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#15191b; --card:#1f2528; --ink:#e9ecec; --muted:#98a2a5; --line:#2e3639;
+      --accent:#6fb8a6; --accent-soft:#22332f; --bad:#e08a75; --bad-soft:#3a2622; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  main{max-width:520px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  h1{font-size:19px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px}
+  .progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:6px 0 18px}
+  .progress > i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.05)}
+  .tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;
+    background:var(--accent-soft);color:var(--accent);margin-bottom:14px}
+  .tag.new{background:#fbefd5;color:#8a5a00}
+  @media (prefers-color-scheme: dark){ .tag.new{background:#3a3020;color:#f0c36a} }
+  .q{font-size:20px;line-height:1.4;font-weight:600;margin:0}
+  .a{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line);font-size:18px;line-height:1.45;display:none}
+  .a.show{display:block}
+  .a .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+  .actions{display:flex;gap:10px;margin-top:18px}
+  button{font:inherit;border:0;border-radius:14px;padding:15px 16px;font-size:16px;font-weight:600;cursor:pointer;flex:1}
+  .primary{background:var(--accent);color:#fff}
+  @media (prefers-color-scheme: dark){ .primary{color:#0f1a17} }
+  .good{background:var(--accent-soft);color:var(--accent)}
+  .bad{background:var(--bad-soft);color:var(--bad)}
+  .ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+  .done{text-align:center;padding:34px 20px}
+  .done h2{margin:0 0 6px;font-size:22px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:22px}
+  .stat span{font-size:12px;color:var(--muted)}
+  .boxes{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .boxes h3{margin:0 0 10px;font-size:14px}
+  .row{display:flex;align-items:center;gap:8px;font-size:13px;margin:5px 0}
+  .row .n{width:74px;color:var(--muted)}
+  .row .bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .row .bar i{display:block;height:100%;background:var(--accent)}
+  .row .c{width:26px;text-align:right}
+  .help{margin-top:18px;font-size:13px;color:var(--muted);line-height:1.5}
+  footer{margin-top:auto;padding-top:28px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+  .hidden{display:none}
+  .confirm{margin-top:12px;font-size:14px;background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:12px}
+  .confirm .actions{margin-top:10px}
+  .linkbtn{background:none;border:0;padding:0;font-size:12px;color:var(--muted);text-decoration:underline;flex:none;font-weight:400}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Extremitäten · MT</h1>
+    <span class="sub" id="dateLbl"></span>
+  </header>
+  <div class="sub" id="counter"></div>
+  <div class="progress"><i id="bar"></i></div>
+
+  <section id="learn" class="hidden">
+    <div class="card">
+      <span class="tag" id="tag">Wiederholung</span>
+      <p class="q" id="q"></p>
+      <div class="a" id="a"><div class="lbl">Antwort</div><div id="aText"></div></div>
+    </div>
+    <div class="actions" id="revealRow"><button class="primary" id="revealBtn">Antwort zeigen</button></div>
+    <div class="actions hidden" id="rateRow">
+      <button class="bad" id="badBtn">Nicht gewusst</button>
+      <button class="good" id="goodBtn">Gewusst</button>
+    </div>
+  </section>
+
+  <section id="done" class="hidden">
+    <div class="card done">
+      <h2 id="doneTitle">Für heute geschafft</h2>
+      <div class="sub" id="doneSub">Morgen gibt es 2 neue Karten und deine Wiederholungen.</div>
+      <div class="actions"><button class="ghost" id="moreBtn">2 weitere neue Karten</button></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sStarted">0</b><span>begonnen</span></div>
+      <div class="stat"><b id="sMastered">0</b><span>sicher (Fach 4+)</span></div>
+      <div class="stat"><b id="sStreak">0</b><span>Tage in Folge</span></div>
+    </div>
+    <div class="boxes">
+      <h3>Karteikasten</h3>
+      <div id="boxRows"></div>
+    </div>
+    <p class="help">So funktioniert's: Jeden Tag kommen 2 neue Karten dazu. Weißt du eine Antwort, wandert die Karte ein Fach weiter und kommt später wieder (1, 2, 4, 8, 16, dann 32 Tage). Weißt du sie nicht, geht sie zurück ins erste Fach und kommt heute noch einmal und morgen wieder.</p>
+    <p class="help" id="saveNote">Dein Lernstand wird auf diesem Gerät gespeichert.</p>
+    <div><button class="linkbtn" id="resetBtn">Lernstand zurücksetzen</button></div>
+    <div class="confirm hidden" id="confirmBox">
+      Wirklich alles zurücksetzen? Dein ganzer Fortschritt geht verloren.
+      <div class="actions"><button class="ghost" id="resetNo">Abbrechen</button><button class="bad" id="resetYes">Zurücksetzen</button></div>
+    </div>
+  </section>
+
+  <footer>
+    App: © Sattler · Fragen aus dem INOMT-Quiz „Extremitäten“<br>
+    <span id="totalLbl"></span>
+  </footer>
+</main>
+
+<script>
+/* ---------- Fragen ---------- */
+const CARDS = [
+  {id:"1",  q:"Welche Struktur hemmt die Pronation im Art. cubiti?", a:"Lig. anulare radii"},
+  {id:"cl", q:"In welchem Gelenkanteil des Art. cubiti entsteht häufiger ein Corpus liberum?", a:"Im Art. humeroradialis."},
+  {id:"2",  q:"Aus welchen Segmenten erfolgt die Innervation der Gelenkkapsel der Schulter?", a:"C4–C8"},
+  {id:"3",  q:"Das ACG wird vorwiegend aus dem Segment … innerviert?", a:"C4"},
+  {id:"6",  q:"Stadium 3 bei einer monoartikulären rheumatoiden Arthritis zeigt dir welche Symptome?", a:"Einschränkung maximal und Schmerz abnehmend"},
+  {id:"7",  q:"Wo kann anatomisch die Ursache für die Einklemmung des N. suprascapularis liegen?", a:"Incisura scapulae"},
+  {id:"8",  q:"Nenne die Struktur am Ellenbogen, die sich wie Spaghetti al dente No. 6 anfühlt.", a:"N. ulnaris"},
+  {id:"9",  q:"Wie lange dauert eine traumatische Arthritis im Art. cubiti?", a:"4–6 Wochen"},
+  {id:"11", q:"Erläutere Ursprung und Ansatz des M. extensor carpi radialis longus.", a:"U: Crista supracondylaris<br>A: Basis ossis metacarpalis II"},
+  {id:"12", q:"Welche knöchernen Strukturen begrenzen den Sulcus intertubercularis?", a:"Tub. majus und Tub. minus"},
+  {id:"13", q:"Wer hemmt die aktive Ellenbogenextension?", a:"M. biceps brachii"},
+  {id:"14", q:"Der Gelenkspalt des ACG verläuft in den meisten Fällen von … nach …", a:"dorsomedial nach ventrolateral"},
+  {id:"15", q:"Erläutere, welche Pathologie häufig am Epicondylus medialis humeri zu finden ist.", a:"Epicondylitis medialis humeri, auch Golfer- bzw. Werferellenbogen genannt"},
+  {id:"16", q:"Aus wie vielen Gelenken besteht das Art. cubiti? Benenne diese.", a:"Aus 3 Gelenken: Art. humeroradialis, Art. humeroulnaris, Art. radioulnaris proximalis"},
+  {id:"17", q:"Eine traumatische Arthritis in der Schulter hat eine Wundheilungszeit von 12 Wochen. Richtig oder falsch?", a:"Falsch"},
+  {id:"18", q:"Benenne die Muskeln, die beim Art. humeroulnaris als Kapselspanner fungieren.", a:"Ventrale Kapsel: M. brachialis<br>Dorsale Kapsel: M. triceps brachii und M. anconaeus"},
+  {id:"19", q:"In welche osteokinematische Richtung bewegt sich der Radius gegenüber der Ulna bei einer Pronationsbewegung?", a:"Nach distal"},
+  {id:"20", q:"Beschreibe die charakteristische Symptomatik des Corpus liberum.", a:"Plötzlich einschießender Schmerz mit Bewegungseinschränkung"},
+  {id:"21", q:"Nenne die Bezeichnung der Nebensehne des M. biceps brachii.", a:"Lacertus fibrosus"}
+];
+const NEW_PER_DAY = 2;
+const INTERVAL = {1:1, 2:2, 3:4, 4:8, 5:16, 6:32}; // Tage bis zur nächsten Wiederholung je Fach
+const LS_KEY = "mt-extremitaeten-v1";
+
+/* ---------- Datum ---------- */
+function ymd(d){ const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); }
+function today(){ return ymd(new Date()); }
+function addDays(s,n){ const [y,m,d]=s.split("-").map(Number); return ymd(new Date(y,m-1,d+n)); }
+
+/* ---------- Zustand ---------- */
+function emptyState(){ return {v:1, cards:{}, lastNewDay:null, newToday:[], days:[], updatedAt:0}; }
+let state = emptyState();
+try { const raw = localStorage.getItem(LS_KEY); if (raw) state = Object.assign(emptyState(), JSON.parse(raw)); } catch(e){}
+
+let dbRef = null, dbOk = false, writing = Promise.resolve();
+function save(){
+  state.updatedAt = Date.now();
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
+  if (dbRef && dbOk){
+    const body = JSON.parse(JSON.stringify(state));
+    writing = writing.then(()=>dbRef.set(body)).catch(e=>{ if(e && (e.code==="invalid_argument"||e.code==="revoked"||e.code==="quota_exceeded")) dbOk=false; });
+  }
+}
+
+/* ---------- Lernlogik ---------- */
+function unseen(){ return CARDS.filter(c=>!state.cards[c.id]); }
+function addNew(n){
+  const t = today();
+  const picks = unseen().slice(0,n);
+  picks.forEach(c=>{ state.cards[c.id] = {box:0, due:t}; state.newToday.push(c.id); });
+  return picks.length;
+}
+function ensureToday(){
+  const t = today();
+  if (state.lastNewDay !== t){ state.newToday = []; state.lastNewDay = t; addNew(NEW_PER_DAY); save(); }
+}
+let queue = [], retried = new Set(), sessionTotal = 0, sessionDone = 0;
+function buildQueue(){
+  const t = today();
+  const due = CARDS.filter(c=>state.cards[c.id] && state.cards[c.id].due <= t);
+  const reviews = due.filter(c=>state.cards[c.id].box>0).sort((a,b)=>state.cards[a.id].box-state.cards[b.id].box);
+  const fresh = due.filter(c=>state.cards[c.id].box===0);
+  queue = reviews.concat(fresh);
+  retried = new Set(); sessionTotal = queue.length; sessionDone = 0;
+}
+function rate(ok){
+  const c = queue.shift(); const s = state.cards[c.id]; const t = today();
+  if (retried.has(c.id)){
+    // zweiter Versuch am selben Tag: bleibt in Fach 1, morgen wieder
+    if (!ok){ queue.push(c); sessionTotal++; }
+  } else if (ok){
+    s.box = Math.min(s.box+1, 6); s.due = addDays(t, INTERVAL[s.box]);
+  } else {
+    s.box = 1; s.due = addDays(t, 1); retried.add(c.id); queue.push(c); sessionTotal++;
+  }
+  sessionDone++;
+  if (!queue.length && !state.days.includes(t)){ state.days.push(t); if (state.days.length>400) state.days = state.days.slice(-400); }
+  save(); render();
+}
+
+/* ---------- Anzeige ---------- */
+const $ = id => document.getElementById(id);
+function streak(){
+  let n=0, d=today(); const set=new Set(state.days);
+  if (!set.has(d)) d = addDays(d,-1);
+  while (set.has(d)){ n++; d = addDays(d,-1); }
+  return n;
+}
+function render(){
+  $("dateLbl").textContent = new Date().toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short"});
+  $("totalLbl").textContent = CARDS.length + " Karten im Stapel";
+  const pct = sessionTotal ? Math.round(sessionDone/sessionTotal*100) : 100;
+  $("bar").style.width = pct + "%";
+  if (queue.length){
+    const c = queue[0], s = state.cards[c.id];
+    $("learn").classList.remove("hidden"); $("done").classList.add("hidden");
+    $("counter").textContent = "Noch " + queue.length + (queue.length===1?" Karte":" Karten") + " heute";
+    const isNew = s.box===0 && !retried.has(c.id);
+    $("tag").textContent = isNew ? "Neu" : retried.has(c.id) ? "Nochmal" : "Fach " + s.box;
+    $("tag").className = "tag" + (isNew ? " new" : "");
+    $("q").textContent = c.q; $("aText").innerHTML = c.a;
+    $("a").classList.remove("show"); $("revealRow").classList.remove("hidden"); $("rateRow").classList.add("hidden");
+  } else {
+    $("learn").classList.add("hidden"); $("done").classList.remove("hidden");
+    $("counter").textContent = "Alles erledigt";
+    const left = unseen().length;
+    $("moreBtn").parentElement.classList.toggle("hidden", left===0);
+    $("doneSub").textContent = left===0
+      ? "Du hast alle Karten begonnen – ab jetzt kommen nur noch Wiederholungen."
+      : "Morgen gibt es " + NEW_PER_DAY + " neue Karten und deine Wiederholungen.";
+    const started = Object.keys(state.cards).length;
+    const mastered = Object.values(state.cards).filter(s=>s.box>=4).length;
+    $("sStarted").textContent = started + "/" + CARDS.length;
+    $("sMastered").textContent = mastered;
+    $("sStreak").textContent = streak();
+    const counts = [1,2,3,4,5,6].map(b=>Object.values(state.cards).filter(s=>Math.max(s.box,1)===b).length);
+    const max = Math.max(1, ...counts);
+    $("boxRows").innerHTML = counts.map((n,i)=>
+      '<div class="row"><span class="n">Fach '+(i+1)+'</span><span class="bar"><i style="width:'+(n/max*100)+'%"></i></span><span class="c">'+n+'</span></div>').join("");
+  }
+}
+
+$("revealBtn").onclick = ()=>{ $("a").classList.add("show"); $("revealRow").classList.add("hidden"); $("rateRow").classList.remove("hidden"); };
+$("goodBtn").onclick = ()=>rate(true);
+$("badBtn").onclick = ()=>rate(false);
+$("moreBtn").onclick = ()=>{ if (addNew(NEW_PER_DAY)){ save(); buildQueue(); render(); } };
+$("resetBtn").onclick = ()=>$("confirmBox").classList.remove("hidden");
+$("resetNo").onclick = ()=>$("confirmBox").classList.add("hidden");
+$("resetYes").onclick = ()=>{ state = emptyState(); $("confirmBox").classList.add("hidden"); save(); ensureToday(); buildQueue(); render(); };
+
+ensureToday(); buildQueue(); render();
+
+/* ---------- Optional: Lernstand im Konto sichern (geräteübergreifend) ---------- */
+(async ()=>{
+  try{
+    if (!window.claude || !claude.use) return;
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    dbRef = db.doc("data/users/" + uid + "/progress");
+    const snap = await Promise.race([dbRef.get(), new Promise((_,r)=>setTimeout(()=>r("timeout"),10000))]);
+    dbOk = true;
+    const remote = snap && snap.exists ? snap.data() : null;
+    if (remote && (remote.updatedAt||0) > (state.updatedAt||0)){
+      state = Object.assign(emptyState(), JSON.parse(JSON.stringify(remote)));
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
+      ensureToday(); buildQueue(); render();
+    } else if (!remote || (state.updatedAt||0) > (remote.updatedAt||0)) {
+      save();
+    }
+    $("saveNote").textContent = "Dein Lernstand wird auf diesem Gerät und in deinem Konto gespeichert.";
+  }catch(e){ dbOk = false; }
+})();
+</script>
+</body>
+</html>
